@@ -439,3 +439,95 @@ class SequentialCompositeSampler(ObjectPositionSampler):
             placed_objects.update(new_placements)
 
         return placed_objects
+
+
+class AlternatingLeftRightSampler(UniformRandomSampler):
+    """
+    Places objects alternating between left and right sides of the table using y-axis.
+    """
+
+    def __init__(self, name, mujoco_objects=None, x_range=(-0.08, 0.08), y_range=(-0.08, 0.08), **kwargs):
+        # Split y range for left and right sides
+        # NOTE(dhanush) : 0.02 is the margin, can be changed as needed.
+        self.right_y_range = (y_range[0], -0.02)  
+        self.left_y_range = (0.02, y_range[1])
+
+        super().__init__(name=name, mujoco_objects=mujoco_objects, x_range=x_range, y_range=y_range, **kwargs)
+
+    def _sample_y(self, object_horizontal_radius):
+        """Sample y position based on current side."""
+        minimum, maximum = self.current_y_range
+        if self.ensure_object_boundary_in_range:
+            minimum += object_horizontal_radius
+            maximum -= object_horizontal_radius
+        return np.random.uniform(high=maximum, low=minimum)
+
+    def sample(self, fixtures=None, reference=None, on_top=True):
+        """Sample positions alternating between sides."""
+        placed_objects = {} if fixtures is None else copy(fixtures)
+
+        # Get base offset
+        if reference is None:
+            base_offset = self.reference_pos
+        elif type(reference) is str:
+            assert reference in placed_objects
+            ref_pos, _, ref_obj = placed_objects[reference]
+            base_offset = np.array(ref_pos)
+            if on_top:
+                base_offset += np.array((0, 0, ref_obj.top_offset[-1]))
+        else:
+            base_offset = np.array(reference)
+            assert (
+                base_offset.shape[0] == 3
+            ), "Invalid reference received. Should be (x,y,z) 3-tuple, but got: {}".format(base_offset)
+
+        # Place each object alternating sides
+        for i, obj in enumerate(self.mujoco_objects):
+            assert obj.name not in placed_objects
+
+            # Set current y range based on alternating pattern
+            self.current_y_range = self.right_y_range if i % 2 == 0 else self.left_y_range
+
+            # Try to place the object
+            success = False
+            for _ in range(5000):  # 5000 retries
+                horizontal_radius = obj.horizontal_radius
+                bottom_offset = obj.bottom_offset
+
+                object_x = self._sample_x(horizontal_radius) + base_offset[0]
+                object_y = self._sample_y(horizontal_radius) + base_offset[1]
+                object_z = self.z_offset + base_offset[2]
+
+                if on_top:
+                    object_z -= bottom_offset[-1]
+
+                # objects cannot overlap
+                location_valid = True
+                if self.ensure_valid_placement:
+                    for (x, y, z), _, other_obj in placed_objects.values():
+                        if (
+                            np.linalg.norm((object_x - x, object_y - y))
+                            <= other_obj.horizontal_radius + horizontal_radius
+                            and object_z - z <= other_obj.top_offset[-1] - bottom_offset[-1]
+                        ):
+                            location_valid = False
+                            break
+
+                if location_valid:
+                    # random rotation
+                    quat = self._sample_quat()
+
+                    # multiply this quat by the object's initial rotation if it has the attribute specified
+                    if hasattr(obj, "init_quat"):
+                        quat = quat_multiply(quat, obj.init_quat)
+
+                    # location is valid, put the object down
+                    pos = (object_x, object_y, object_z)
+                    placed_objects[obj.name] = (pos, quat, obj)
+                    success = True
+                    break
+
+            if not success:
+                raise RandomizationError("Cannot place all objects")
+
+        return placed_objects
