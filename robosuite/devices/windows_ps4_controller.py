@@ -43,6 +43,7 @@ class WindowsPS4Controller(Device):
     @staticmethod
     def _display_controls():
         """Method to pretty print controls."""
+
         def print_command(char, info):
             char += " " * (30 - len(char))
             print("{}\t{}".format(char, info))
@@ -89,7 +90,7 @@ class WindowsPS4Controller(Device):
 
         # Get other states
         grasp = 1 if self.controller.get_axis(4) > 0.5 else 0  # L2 trigger
-        reset = 1 if self.controller.get_button(1) else 0      # Circle button
+        reset = 1 if self.controller.get_button(1) else 0  # Circle button
 
         return dict(
             dpos=dpos,

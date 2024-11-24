@@ -23,7 +23,11 @@ from robosuite.utils.gazepoint import GazepointClient
 
 
 def collect_human_trajectory(
-    env, device, arm, max_fr, gazepoint: GazepointClient, 
+    env,
+    device,
+    arm,
+    max_fr,
+    gazepoint: GazepointClient,
 ):
     """
     Use the device (keyboard or SpaceNav 3D mouse) to collect a demonstration.
@@ -337,7 +341,9 @@ if __name__ == "__main__":
     elif args.device == "ps4_controller":
         from robosuite.devices import PS4Controller, WindowsPS4Controller
 
-        device = WindowsPS4Controller(env=env, pos_sensitivity=args.pos_sensitivity, rot_sensitivity=args.rot_sensitivity)
+        device = WindowsPS4Controller(
+            env=env, pos_sensitivity=args.pos_sensitivity, rot_sensitivity=args.rot_sensitivity
+        )
 
     else:
         raise Exception("Invalid device choice: choose either 'keyboard' or 'spacemouse'.")
@@ -350,7 +356,7 @@ if __name__ == "__main__":
     # gaze data client
     gazepoint = GazepointClient()
     gazepoint.connect()
-    
+
     # collect demonstrations
     while True:
         collect_human_trajectory(env, device, args.arm, args.max_fr, gazepoint)
