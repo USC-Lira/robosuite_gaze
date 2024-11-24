@@ -1,6 +1,7 @@
 from .device import Device
 from .keyboard import Keyboard
 from .ps4_controller import PS4Controller
+from .windows_ps4_controller import WindowsPS4Controller
 
 try:
     from .spacemouse import SpaceMouse
