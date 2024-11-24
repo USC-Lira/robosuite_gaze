@@ -305,9 +305,9 @@ if __name__ == "__main__":
 
         device = MJGUI(env=env)
     elif args.device == "ps4_controller":
-        from robosuite.devices import PS4Controller
+        from robosuite.devices import PS4Controller, WindowsPS4Controller
 
-        device = PS4Controller(env=env, pos_sensitivity=args.pos_sensitivity, rot_sensitivity=args.rot_sensitivity)
+        device = WindowsPS4Controller(env=env, pos_sensitivity=args.pos_sensitivity, rot_sensitivity=args.rot_sensitivity)
 
     else:
         raise Exception("Invalid device choice: choose either 'keyboard' or 'spacemouse'.")

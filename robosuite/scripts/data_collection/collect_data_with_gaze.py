@@ -19,12 +19,11 @@ from robosuite.controllers import load_composite_controller_config
 from robosuite.controllers.composite.composite_controller import WholeBody
 from robosuite.wrappers import VisualizationWrapper, GazeDataCollectionWrapper
 
-from gazepointinterface import GazeDataUtil, SimGazeClient, GazeServerConfig
-from screeninfo import get_monitors
+from robosuite.utils.gazepoint import GazepointClient
 
 
 def collect_human_trajectory(
-    env, device, arm, max_fr, gaze_data_client: SimGazeClient, gaze_data_processor: GazeDataUtil
+    env, device, arm, max_fr, gazepoint: GazepointClient, 
 ):
     """
     Use the device (keyboard or SpaceNav 3D mouse) to collect a demonstration.
@@ -67,10 +66,9 @@ def collect_human_trajectory(
         # Get the newest action
         input_ac_dict = device.input2action()
 
-        # Get the newest gaze data
-        raw_gaze_message = gaze_data_client.get_latest_message()
-        pixel_coordinates, _ = gaze_data_processor.gaze_to_pixels(raw_gaze_message)
-        pixel_coordinates_array = np.array([pixel_coordinates.pixel_x, pixel_coordinates.pixel_y])
+        # get the latest gaze information
+        gaze_x, gaze_y = gazepoint.get_latest_gaze()
+        gaze_np_xy = np.array([gaze_x, gaze_y])
 
         # If action is none, then this a reset so we should break
         if input_ac_dict is None:
@@ -100,7 +98,7 @@ def collect_human_trajectory(
         for gripper_ac in all_prev_gripper_actions[device.active_robot]:
             all_prev_gripper_actions[device.active_robot][gripper_ac] = action_dict[gripper_ac]
 
-        env.step(env_action, pixel_coordinates_array)  # TODO(dhanush): pass gaze...
+        env.step(env_action, gaze_np_xy)
         env.render()
 
         # Also break if we complete the task
@@ -337,9 +335,9 @@ if __name__ == "__main__":
 
         device = MJGUI(env=env)
     elif args.device == "ps4_controller":
-        from robosuite.devices import PS4Controller
+        from robosuite.devices import PS4Controller, WindowsPS4Controller
 
-        device = PS4Controller(env=env, pos_sensitivity=args.pos_sensitivity, rot_sensitivity=args.rot_sensitivity)
+        device = WindowsPS4Controller(env=env, pos_sensitivity=args.pos_sensitivity, rot_sensitivity=args.rot_sensitivity)
 
     else:
         raise Exception("Invalid device choice: choose either 'keyboard' or 'spacemouse'.")
@@ -350,12 +348,10 @@ if __name__ == "__main__":
     os.makedirs(new_dir)
 
     # gaze data client
-    monitor = get_monitors()[0]  # TODO: handle multiple monitors
-    config = GazeServerConfig(host="192.168.1.93", port=5478, message_length=96)
-    gaze_data_client = SimGazeClient(config=GazeServerConfig)
-    gaze_data_processor = GazeDataUtil(screen_width=monitor.width, screen_height=monitor.height)
-
+    gazepoint = GazepointClient()
+    gazepoint.connect()
+    
     # collect demonstrations
     while True:
-        collect_human_trajectory(env, device, args.arm, args.max_fr, gaze_data_client, gaze_data_processor)
+        collect_human_trajectory(env, device, args.arm, args.max_fr, gazepoint)
         gather_demonstrations_as_hdf5(tmp_directory, new_dir, env_info)
