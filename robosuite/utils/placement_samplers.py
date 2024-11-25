@@ -448,9 +448,9 @@ class AlternatingLeftRightSampler(UniformRandomSampler):
 
     def __init__(self, name, mujoco_objects=None, x_range=(-0.08, 0.08), y_range=(-0.08, 0.08), **kwargs):
         # Split y range for left and right sides
-        # NOTE(dhanush) : 0.02 is the margin, can be changed as needed.
-        self.right_y_range = (y_range[0], -0.02)  
-        self.left_y_range = (0.02, y_range[1])
+        # NOTE(dhanush) : 0.05 is the margin, can be changed as needed.
+        self.right_y_range = (y_range[0], -0.1)  
+        self.left_y_range = (0.1, y_range[1])
 
         super().__init__(name=name, mujoco_objects=mujoco_objects, x_range=x_range, y_range=y_range, **kwargs)
 

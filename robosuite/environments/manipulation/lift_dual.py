@@ -200,7 +200,7 @@ class LiftDual(ManipulationEnv):
                 name="ObjectSampler",
                 mujoco_objects=cubes,
                 x_range=[-0.05, 0.05],
-                y_range=[-0.15, 0.15],
+                y_range=[-0.275, 0.275],
                 rotation=None,
                 ensure_object_boundary_in_range=False,
                 ensure_valid_placement=True,
