@@ -235,7 +235,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--renderer",
         type=str,
-        default="mjviewer",
+        default="mujoco",
         help="Use Mujoco's builtin interactive viewer (mjviewer) or OpenCV viewer (mujoco)",
     )
     parser.add_argument(
