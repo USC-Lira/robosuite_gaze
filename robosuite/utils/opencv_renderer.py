@@ -4,12 +4,14 @@ opencv renderer class.
 import cv2
 import numpy as np
 
+from screeninfo import get_monitors
 
 class OpenCVRenderer:
     def __init__(self, sim):
         # TODO: update this appropriately - need to get screen dimensions
-        self.width = 1280
-        self.height = 800
+        mointor = get_monitors()[0]
+        self.width = mointor.width
+        self.height = mointor.height
 
         self.sim = sim
         self.camera_name = self.sim.model.camera_id2name(0)
